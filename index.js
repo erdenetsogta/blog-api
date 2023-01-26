@@ -1,20 +1,20 @@
 const express = require("express");
 const cors = require("cors");
-const { v4 } = require("uuid");
+const { v4: uuid } = require("uuid");
 
-const port = 3000;
+const port = 8000;
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-const categories = [
+let categories = [
     {
-        id: v4(),
+        id: uuid(),
         name: "Politics",
     },
     {
-        id: v4(),
+        id: uuid(),
         name: "Sport",
     },
 ];
@@ -35,8 +35,33 @@ app.get("/categories/:id", (req, res) => {
 
 app.post("/categories", (req, res) => {
     const { name } = req.body;
-    categories.push({ id: v4(), name: name });
+    const newCategory = { id: uuid(), name: name };
+    categories.push(newCategory);
     res.sendStatus(201);
+});
+
+app.delete("/categories/:id", (req, res) => {
+    const { id } = req.params;
+    const one = categories.find((category) => category.id === id);
+    if (one) {
+        const newList = categories.filter((category) => category.id !== id);
+        categories = newList;
+        res.json({ deletedId: id });
+    } else {
+        res.sendStatus(404);
+    }
+});
+
+app.put("/categories/:id", (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+    const index = categories.findIndex((category) => category.id === id);
+    if (index > -1) {
+        categories[index].name = name;
+        res.json({ updatedId: id });
+    } else {
+        res.sendStatus(404);
+    }
 });
 
 app.listen(port, () => {
