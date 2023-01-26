@@ -1,0 +1,14 @@
+GET http://localhost:3000/categories 
+
+###
+
+GET http://localhost:3000/categories/id
+
+###
+
+POST http://localhost:3000/categories 
+content-type: application/json
+
+{
+    "name": "Entertainment"
+}
