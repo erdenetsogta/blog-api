@@ -37,7 +37,7 @@ app.post("/categories", (req, res) => {
 
     const categories = readCategories();
 
-    categories.push(newCategory);
+    categories.unshift(newCategory);
     fs.writeFileSync("categories.json", JSON.stringify(categories));
 
     res.sendStatus(201);
