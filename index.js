@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
+const axios = require("axios");
 const { v4: uuid } = require("uuid");
 
 const port = 8000;
@@ -106,6 +107,18 @@ app.get("/users/update", (req, res) => {
     res.json({});
 });
 
+app.get("/articles", (req, res) => {
+    const { q } = req.query;
+    const articles = readArticles();
+    if (q) {
+        const filteredList = articles.filter((article) => article.title.toLowerCase().includes(q.toLowerCase()));
+        res.json(filteredList);
+    } else {
+        const page = articles.slice(0, 10);
+        res.json(page);
+    }
+});
+
 app.post("/articles", (req, res) => {
     const { title, categoryId, text } = req.body;
     const newArticle = { id: uuid(), title, categoryId, text };
@@ -116,6 +129,21 @@ app.post("/articles", (req, res) => {
     fs.writeFileSync("articles.json", JSON.stringify(articles));
 
     res.sendStatus(201);
+});
+
+app.get("/articles/insertSampleData", (req, res) => {
+    axios("https://dummyjson.com/posts?limit=100").then(({ data }) => {
+        const articles = readArticles();
+
+        data.posts.forEach((post) => {
+            const newArticle = { id: uuid(), title: post.title, tags: post.tags, text: post.body };
+            articles.unshift(newArticle);
+        });
+
+        fs.writeFileSync("articles.json", JSON.stringify(articles));
+
+        res.json(["success"]);
+    });
 });
 
 app.get("/articles/:id", (req, res) => {
