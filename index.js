@@ -108,23 +108,32 @@ app.get("/users/update", (req, res) => {
 });
 
 app.get("/articles", (req, res) => {
-    const { q, page } = req.query;
+    const { q, page, categoryId } = req.query;
     const articles = readArticles();
 
-    // req.query; // ?page=10&q=name
-    // req.params; // blog/:id
-    // req.body; // post request data
+    let finalResult = articles;
+
+    if (categoryId) {
+        finalResult = articles.filter((article) => article.categoryId === categoryId);
+    }
 
     if (q) {
-        const filteredList = articles.filter((article) => article.title.toLowerCase().includes(q.toLowerCase()));
-        res.json(filteredList);
-    } else {
-        const pagedList = articles.slice((page - 1) * 10, page * 10);
-        res.json({
-            list: pagedList,
-            count: articles.length,
-        });
+        finalResult = finalResult.filter((article) => article.title.toLowerCase().includes(q.toLowerCase()));
     }
+
+    const pagedList = finalResult.slice((page - 1) * 10, page * 10);
+
+    const categories = readCategories();
+
+    pagedList.forEach((oneArticle) => {
+        const category = categories.find((category) => category.id === oneArticle.categoryId);
+        oneArticle.category = category;
+    });
+
+    res.json({
+        list: pagedList,
+        count: finalResult.length,
+    });
 });
 
 app.post("/articles", (req, res) => {
