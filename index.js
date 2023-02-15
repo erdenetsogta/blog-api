@@ -4,6 +4,13 @@ const fs = require("fs");
 const axios = require("axios");
 const { v4: uuid } = require("uuid");
 
+const user = {
+    username: "Horolmaa",
+    password: "balgan",
+};
+
+let userTokens = [];
+
 const port = 8000;
 const app = express();
 
@@ -22,8 +29,28 @@ function readArticles() {
     return articles;
 }
 
+app.get("/login", (req, res) => {
+    const { username, password } = req.query;
+
+    if (user.username === username && user.password === password) {
+        const token = uuid();
+        userTokens.push(token);
+        res.json({ token });
+    } else {
+        res.sendStatus(401);
+    }
+});
+
 app.get("/categories", (req, res) => {
-    const { q } = req.query;
+    const { q, token } = req.query;
+
+    console.log({ userTokens, token });
+
+    if (!userTokens.includes(token)) {
+        res.sendStatus(401);
+        return;
+    }
+
     const categories = readCategories();
     if (q) {
         const filteredList = categories.filter((category) => category.name.toLowerCase().includes(q.toLowerCase()));
