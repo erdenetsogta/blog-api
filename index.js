@@ -3,10 +3,14 @@ const cors = require("cors");
 const fs = require("fs");
 const axios = require("axios");
 const { v4: uuid } = require("uuid");
+const bcrypt = require("bcryptjs");
+
+// const hash = bcrypt.hashSync("balgan");
+// console.log({ hash });
 
 const user = {
     username: "Horolmaa",
-    password: "balgan",
+    password: "$2a$10$4GYsHdAmvSTrkXmADpyR4OJnNj8j3GuL0f8WTL729mtlBEhBKkNzq",
 };
 
 let userTokens = [];
@@ -32,7 +36,7 @@ function readArticles() {
 app.get("/login", (req, res) => {
     const { username, password } = req.query;
 
-    if (user.username === username && user.password === password) {
+    if (user.username === username && bcrypt.compareSync(password, user.password)) {
         const token = uuid();
         userTokens.push(token);
         res.json({ token });
