@@ -4,9 +4,16 @@ const fs = require("fs");
 const axios = require("axios");
 const { v4: uuid } = require("uuid");
 const bcrypt = require("bcryptjs");
+const mysql = require("mysql2");
 
 // const hash = bcrypt.hashSync("balgan");
 // console.log({ hash });
+
+const connection = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    database: "evening",
+});
 
 const user = {
     username: "Horolmaa",
@@ -32,6 +39,13 @@ function readArticles() {
     const articles = JSON.parse(content);
     return articles;
 }
+
+app.get("/mysql-test", (req, res) => {
+    const limit = 10;
+    connection.query(`SELECT * FROM titles limit ${limit}`, function (err, results, fields) {
+        res.json(results);
+    });
+});
 
 app.get("/login", (req, res) => {
     const { username, password } = req.query;
