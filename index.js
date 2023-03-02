@@ -4,16 +4,7 @@ const fs = require("fs");
 const axios = require("axios");
 const { v4: uuid } = require("uuid");
 const bcrypt = require("bcryptjs");
-const mysql = require("mysql2");
-
-// const hash = bcrypt.hashSync("balgan");
-// console.log({ hash });
-
-const connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    database: "evening",
-});
+const { connection } = require("./config/mysql");
 
 const user = {
     username: "Horolmaa",
@@ -42,7 +33,7 @@ function readArticles() {
 
 app.get("/mysql-test", (req, res) => {
     const limit = 10;
-    connection.query(`SELECT * FROM titles limit ${limit}`, function (err, results, fields) {
+    connection.query(`SELECT * FROM category limit ${limit}`, function (err, results, fields) {
         res.json(results);
     });
 });
@@ -60,72 +51,38 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/categories", (req, res) => {
-    const { q, token } = req.query;
-
-    console.log({ userTokens, token });
-
-    if (!userTokens.includes(token)) {
-        res.sendStatus(401);
-        return;
-    }
-
-    const categories = readCategories();
-    if (q) {
-        const filteredList = categories.filter((category) => category.name.toLowerCase().includes(q.toLowerCase()));
-        res.json(filteredList);
-    } else {
-        res.json(categories);
-    }
+    connection.query(`SELECT * FROM category`, function (err, results, fields) {
+        res.json(results);
+    });
 });
 
 app.get("/categories/:id", (req, res) => {
     const { id } = req.params;
-    const categories = readCategories();
-    const one = categories.find((category) => category.id === id);
-    if (one) {
-        res.json(one);
-    } else {
-        res.sendStatus(404);
-    }
+    connection.query(`SELECT * FROM category where id=?`, [id], function (err, results, fields) {
+        res.json(results[0]);
+    });
 });
 
 app.post("/categories", (req, res) => {
     const { name } = req.body;
-    const newCategory = { id: uuid(), name: name };
-
-    const categories = readCategories();
-
-    categories.unshift(newCategory);
-    fs.writeFileSync("categories.json", JSON.stringify(categories));
-
-    res.sendStatus(201);
+    connection.query(`insert into category values(?, ?)`, [uuid(), name], function (err, results, fields) {
+        res.sendStatus(201);
+    });
 });
 
 app.delete("/categories/:id", (req, res) => {
     const { id } = req.params;
-    const categories = readCategories();
-    const one = categories.find((category) => category.id === id);
-    if (one) {
-        const newList = categories.filter((category) => category.id !== id);
-        fs.writeFileSync("categories.json", JSON.stringify(newList));
+    connection.query(`delete from category where id=?`, [id], function (err, results, fields) {
         res.json({ deletedId: id });
-    } else {
-        res.sendStatus(404);
-    }
+    });
 });
 
 app.put("/categories/:id", (req, res) => {
     const { id } = req.params;
     const { name } = req.body;
-    const categories = readCategories();
-    const index = categories.findIndex((category) => category.id === id);
-    if (index > -1) {
-        categories[index].name = name;
-        fs.writeFileSync("categories.json", JSON.stringify(categories));
+    connection.query(`update category set name=? where id=?`, [name, id], function (err, results, fields) {
         res.json({ updatedId: id });
-    } else {
-        res.sendStatus(404);
-    }
+    });
 });
 
 app.get("/users/save", (req, res) => {
