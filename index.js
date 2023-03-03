@@ -5,6 +5,7 @@ const axios = require("axios");
 const { v4: uuid } = require("uuid");
 const bcrypt = require("bcryptjs");
 const { connection } = require("./config/mysql");
+const { categoryRouter } = require("./routes/categoryController");
 
 const user = {
     username: "Horolmaa",
@@ -18,6 +19,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.use("/categories", categoryRouter);
 
 function readCategories() {
     const content = fs.readFileSync("categories.json");
@@ -48,41 +51,6 @@ app.get("/login", (req, res) => {
     } else {
         res.sendStatus(401);
     }
-});
-
-app.get("/categories", (req, res) => {
-    connection.query(`SELECT * FROM category`, function (err, results, fields) {
-        res.json(results);
-    });
-});
-
-app.get("/categories/:id", (req, res) => {
-    const { id } = req.params;
-    connection.query(`SELECT * FROM category where id=?`, [id], function (err, results, fields) {
-        res.json(results[0]);
-    });
-});
-
-app.post("/categories", (req, res) => {
-    const { name } = req.body;
-    connection.query(`insert into category values(?, ?)`, [uuid(), name], function (err, results, fields) {
-        res.sendStatus(201);
-    });
-});
-
-app.delete("/categories/:id", (req, res) => {
-    const { id } = req.params;
-    connection.query(`delete from category where id=?`, [id], function (err, results, fields) {
-        res.json({ deletedId: id });
-    });
-});
-
-app.put("/categories/:id", (req, res) => {
-    const { id } = req.params;
-    const { name } = req.body;
-    connection.query(`update category set name=? where id=?`, [name, id], function (err, results, fields) {
-        res.json({ updatedId: id });
-    });
 });
 
 app.get("/users/save", (req, res) => {
