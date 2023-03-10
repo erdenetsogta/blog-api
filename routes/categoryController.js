@@ -4,7 +4,8 @@ const { connection } = require("../config/mysql");
 const router = express.Router();
 
 router.get("/", (req, res) => {
-    connection.query(`SELECT * FROM category order by name`, function (err, results, fields) {
+    const { q } = req.query;
+    connection.query(`SELECT * FROM category where name like ? order by name`, [`%${q}%`], function (err, results, fields) {
         res.json(results);
     });
 });

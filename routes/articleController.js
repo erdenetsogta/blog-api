@@ -1,16 +1,55 @@
 const express = require("express");
 const { v4: uuid } = require("uuid");
+const axios = require("axios");
 const { connection } = require("../config/mysql");
 const router = express.Router();
 
-router.get("/", (req, res) => {
-    connection.query(`SELECT article.id, title, category.name as categoryName FROM article left join category on article.category_id = category.id`, function (err, results, fields) {
-        console.log({ err });
-        res.json({
-            list: results,
-            count: 10,
+router.get("/populate", (req, res) => {
+    axios.get("https://dummyjson.com/posts?limit=150").then(function ({ data }) {
+        const { posts } = data;
+        posts.forEach((post) => {
+            const { title, body } = post;
+            const newArticle = {
+                id: uuid(),
+                title,
+                content: body,
+            };
+            connection.query(`insert into article set ?`, newArticle, function (err, results, fields) {
+                console.log(post.id);
+            });
         });
     });
+
+    res.json(["populate"]);
+});
+
+router.get("/", (req, res) => {
+    const { page, size, categoryId } = req.query;
+
+    let params = [];
+    let countParams = [];
+    let whereQuery = "";
+    if (categoryId) {
+        whereQuery = "where category_id=?";
+        params.push(categoryId);
+        countParams.push(categoryId);
+    }
+
+    params.push((page - 1) * size + 1);
+    params.push(+size);
+
+    connection.query(
+        `SELECT article.id, title, category.name as categoryName FROM article left join category on article.category_id = category.id ${whereQuery} limit ?,?`,
+        params,
+        function (err, articleResults, fields) {
+            connection.query(`SELECT count(*) as count FROM article ${whereQuery}`, countParams, function (err, countResults, fields) {
+                res.json({
+                    list: articleResults,
+                    count: countResults[0].count,
+                });
+            });
+        }
+    );
 });
 
 router.get("/:id", (req, res) => {
